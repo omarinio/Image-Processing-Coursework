@@ -52,7 +52,7 @@ int main( int argc, const char** argv ) {
 
 // split function taken from computer graphics coursework
 vector<string> split(const std::string &line, char delimiter) {
-	string haystack = line;
+	auto haystack = line;
 	std::vector<std::string> tokens;
 	size_t pos;
 	while ((pos = haystack.find(delimiter)) != std::string::npos) {
@@ -84,7 +84,6 @@ vector<Rect> readFile(string num) {
     infile.close();
 
     return truths;
-
 }
 
 // https://medium.com/koderunners/intersection-over-union-516a3950269c
@@ -128,8 +127,29 @@ void detectAndDisplay( Mat frame, string num ) {
         rectangle(frame, Point(truths[j].x, truths[j].y), Point(truths[j].x + truths[j].width, truths[j].y + truths[j].height), Scalar(0,0,255), 2);
     }
 
-	float iou = findIOU(faces[0], truths[0]);
+	float iou_threshold = 0.5;
+	float true_positives = 0;
 
-	cout << iou << endl;
+	for (int x = 0; x < truths.size(); x++) {
+		for (int y = 0; y < faces.size(); y++) {
+			float iou = findIOU(faces[y], truths[x]);
+			if (iou > iou_threshold) {
+				true_positives++;
+				break;
+			}
+		}
+	}
+
+	float true_positive_rate;
+
+	cout << "true positives: " << true_positives << endl;
+
+	if (truths.size() > 0){
+		true_positive_rate = true_positives/(float)truths.size();
+	} else {
+		true_positive_rate = 0;
+	}
+
+	cout << "TPR: " << true_positive_rate << endl;
 
 }
