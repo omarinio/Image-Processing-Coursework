@@ -28,7 +28,7 @@ float findF1Score( float true_positives, float false_positives, float false_nega
 vector<Rect> readFile( string num );
 
 /** Global variables */
-String cascade_name = "frontalface.xml";
+String cascade_name = "dartboard.xml";
 CascadeClassifier cascade;
 
 
