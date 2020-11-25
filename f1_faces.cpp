@@ -22,8 +22,10 @@ using namespace cv;
 
 /** Function Headers */
 void detectAndDisplay( Mat frame, string num );
-vector<string> split(const std::string &line, char delimiter);
-vector<Rect> readFile(string num);
+vector<string> split( const std::string &line, char delimiter );
+float findIOU( Rect found, Rect truth );
+float findF1Score( float true_positives, float false_positives, float false_negatives );
+vector<Rect> readFile( string num );
 
 /** Global variables */
 String cascade_name = "frontalface.xml";
@@ -34,24 +36,41 @@ CascadeClassifier cascade;
 int main( int argc, const char** argv ) {
     string num = argv[1];
 
-    string file = "images/dart" + num + ".jpg";
+	if (num == "all") {
+		for (int i = 0; i < 16; i++) {
+			string file = "images/dart" + to_string(i) + ".jpg";
+	
+			Mat frame = imread(file, CV_LOAD_IMAGE_COLOR);
+
+			// 2. Load the Strong Classifier in a structure called `Cascade'
+			if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
+
+			// 3. Detect Faces and Display Result
+			detectAndDisplay( frame, to_string(i) );
+
+			// 4. Save Result Image
+			imwrite( "detected" + to_string(i) + ".jpg", frame );
+		}
+	} else {
+		string file = "images/dart" + num + ".jpg";
        
-	Mat frame = imread(file, CV_LOAD_IMAGE_COLOR);
+		Mat frame = imread(file, CV_LOAD_IMAGE_COLOR);
 
-	// 2. Load the Strong Classifier in a structure called `Cascade'
-	if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
+		// 2. Load the Strong Classifier in a structure called `Cascade'
+		if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
-	// 3. Detect Faces and Display Result
-	detectAndDisplay( frame, num );
+		// 3. Detect Faces and Display Result
+		detectAndDisplay( frame, num );
 
-	// 4. Save Result Image
-	imwrite( "detected" + num + ".jpg", frame );
+		// 4. Save Result Image
+		imwrite( "detected" + num + ".jpg", frame );
+	}
 
 	return 0;
 }
 
 // split function taken from computer graphics coursework
-vector<string> split(const std::string &line, char delimiter) {
+vector<string> split( const std::string &line, char delimiter ) {
 	auto haystack = line;
 	std::vector<std::string> tokens;
 	size_t pos;
@@ -64,7 +83,7 @@ vector<string> split(const std::string &line, char delimiter) {
 	return tokens;
 }
 
-vector<Rect> readFile(string num) {
+vector<Rect> readFile( string num ) {
     // load in file
     string filename = "face_coordinates/" + num + ".csv";
     std::ifstream infile(filename);
@@ -98,6 +117,15 @@ float findIOU( Rect found, Rect truth ) {
 	float uni = (found.width * found.height) + (truth.width * truth.height) - intersection;
 
 	return intersection/uni;
+}
+
+// formula from: https://en.wikipedia.org/wiki/F-score 
+float findF1Score( float true_positives, float false_positives, float false_negatives ) {
+	if (true_positives == 0 && false_positives == 0 && false_negatives == 0) return 0;
+
+	float f1_score = true_positives/(true_positives + 0.5*(false_positives+false_negatives));
+
+	return f1_score;
 }
 
 /** @function detectAndDisplay */
@@ -142,7 +170,7 @@ void detectAndDisplay( Mat frame, string num ) {
 
 	float true_positive_rate;
 
-	cout << "true positives: " << true_positives << endl;
+	cout << "IMAGE " << num << endl;
 
 	if (truths.size() > 0){
 		true_positive_rate = true_positives/(float)truths.size();
@@ -151,5 +179,17 @@ void detectAndDisplay( Mat frame, string num ) {
 	}
 
 	cout << "TPR: " << true_positive_rate << endl;
+	cout << "true positives: " << true_positives << endl;
 
+	float false_positives = faces.size() - true_positives;
+
+	cout << "false positives: " << false_positives << endl;
+
+	float false_negatives = truths.size() - true_positives;
+
+	cout << "false negatives: " << false_negatives << endl;
+
+	float f1_score = findF1Score(true_positives, false_positives, false_negatives);
+
+	cout << "f1: " << f1_score << endl;
 }
