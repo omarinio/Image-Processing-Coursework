@@ -87,6 +87,20 @@ vector<Rect> readFile(string num) {
 
 }
 
+// https://medium.com/koderunners/intersection-over-union-516a3950269c
+float findIOU( Rect found, Rect truth ) {
+	float width = min(found.x + found.width, truth.x + truth.width) - max(found.x, truth.x);
+	float height = min(found.y + found.height, truth.y + truth.height) - max(found.y, truth.y);
+
+	// no overlap
+	if (width <= 0 || height <= 0) return 0;
+
+	float intersection = width * height;
+	float uni = (found.width * found.height) + (truth.width * truth.height) - intersection;
+
+	return intersection/uni;
+}
+
 /** @function detectAndDisplay */
 void detectAndDisplay( Mat frame, string num ) {
 	std::vector<Rect> faces;
@@ -113,4 +127,9 @@ void detectAndDisplay( Mat frame, string num ) {
     for (int j = 0; j < truths.size(); j++) {
         rectangle(frame, Point(truths[j].x, truths[j].y), Point(truths[j].x + truths[j].width, truths[j].y + truths[j].height), Scalar(0,0,255), 2);
     }
+
+	float iou = findIOU(faces[0], truths[0]);
+
+	cout << iou << endl;
+
 }
