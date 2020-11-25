@@ -85,7 +85,7 @@ vector<string> split( const std::string &line, char delimiter ) {
 
 vector<Rect> readFile( string num ) {
     // load in file
-    string filename = "face_coordinates/" + num + ".csv";
+    string filename = "dartboard_coordinates/" + num + ".csv";
     std::ifstream infile(filename);
     string line;
     // initalise empty vector for output
