@@ -6,7 +6,6 @@
 
 using namespace cv;
 
-#define MAXRADIUS 100
 #define MINRADIUS 20
 
 void hough_main( std::string imageName );
@@ -33,7 +32,8 @@ void houghCircle(
     Mat &gradient, 
     Mat &direction, 
     int ***houghSpace,
-    int radius);
+    int radius,
+    const int MAXRADIUS);
 
 void houghLines(Mat &input, 
     Mat &gradient, 
@@ -67,19 +67,10 @@ int **malloc2dArray(int dim1, int dim2) {
     return array;
 }
 
-
-int main( int argc, char** argv ) {
-
-    // LOADING THE IMAGE
-    char* imageName = argv[1];
-
+void houghMain( std::string imageName ) {
+    
     Mat image;
     image = imread( imageName, 1 );
-
-    if( argc != 2 || !image.data ) {
-        printf( " No image data \n " );
-        return -1;
-    }
 
     // CONVERT COLOUR, BLUR AND SAVE
     Mat gray_image;
@@ -108,6 +99,8 @@ int main( int argc, char** argv ) {
     imwrite("mag.jpg",resultMag);
     imwrite("dir.jpg", resultDir);
 
+    const int MAXRADIUS = max(image.rows/4, image.cols/4);
+
     int ***houghSpace = malloc3dArray(image.rows, image.cols, MAXRADIUS);
 
     // loading in magnitude
@@ -118,7 +111,7 @@ int main( int argc, char** argv ) {
     Mat thresh = threshold(mag_gray, 60);
 
     // finding circles 
-    houghCircle(image, thresh, dirSobel, houghSpace, MAXRADIUS-MINRADIUS);
+    houghCircle(image, thresh, dirSobel, houghSpace, MAXRADIUS-MINRADIUS, MAXRADIUS);
 
     // finding lines
     houghLines(image, thresh, dirSobel);
@@ -129,12 +122,12 @@ int main( int argc, char** argv ) {
     // thresholding hough line transform 
     Mat line_hough_gray;
     cvtColor( line_hough, line_hough_gray, CV_BGR2GRAY );
-    Mat thresh_line = threshold(line_hough_gray, 7);
+    Mat thresh_line = threshold(line_hough_gray, 10);
+
+    imwrite("FALO.jpg", thresh_line);
 
     // getting lines back
     houghToImage(thresh_line, image);
-
-    return 0;
 }
 
 void Sobel(cv::Mat &input, int size, cv::Mat &magOutput, cv::Mat &xOutput, cv::Mat &yOutput, cv::Mat &dirOutput) {
@@ -341,7 +334,7 @@ void houghNaiveLines(Mat &input, Mat &gradient, Mat &direction) {
     imwrite( "houghLineOuput.jpg", houghSpaceConvert );
 }
 
-void houghCircle(Mat &input, Mat &gradient, Mat &direction, int ***houghSpace, int radius) {
+void houghCircle(Mat &input, Mat &gradient, Mat &direction, int ***houghSpace, int radius, const int MAXRADIUS) {
     for (int i = 0; i < gradient.rows; i++) {
         for (int j = 0; j < gradient.cols; j++) {
             for (int k = 0; k < MAXRADIUS; k++) {
@@ -379,12 +372,8 @@ void houghCircle(Mat &input, Mat &gradient, Mat &direction, int ***houghSpace, i
             for (int r = MINRADIUS; r < MAXRADIUS; r++) {
                 houghSpaceOutput.at<float>(x,y) += houghSpace[x][y][r];
                 if (houghSpace[x][y][r] > 20) {
-                    std::cout << "circle" << std::endl;
                     circle(input, Point(y, x), r, Scalar(0, 255, 255), 2);
                 }
-                // if(!(pow((x-xc),2) + pow((y-yc),2) > pow(rc,2))) {
-                //     test_pass = false;
-                // }
             }
             
         }

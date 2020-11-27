@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// COMS30121 - f1_faces.cpp
+// COMS30121 - f1_darts.cpp
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -16,6 +16,8 @@
 #include <algorithm>
 #include <sstream>
 #include <fstream>
+
+#include "hough.h"
 
 using namespace std;
 using namespace cv;
@@ -61,6 +63,8 @@ int main( int argc, const char** argv ) {
 
 		// 3. Detect Faces and Display Result
 		detectAndDisplay( frame, num );
+
+		houghMain(file);
 
 		// 4. Save Result Image
 		imwrite( "detected" + num + ".jpg", frame );
