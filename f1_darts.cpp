@@ -23,7 +23,7 @@ using namespace std;
 using namespace cv;
 
 /** Function Headers */
-void detectAndDisplay( Mat frame, string num );
+void detectAndDisplay( Mat frame, string num, string file );
 vector<string> split( const std::string &line, char delimiter );
 float findIOU( Rect found, Rect truth );
 float findF1Score( float true_positives, float false_positives, float false_negatives );
@@ -37,6 +37,8 @@ CascadeClassifier cascade;
 /** @function main */
 int main( int argc, const char** argv ) {
     string num = argv[1];
+
+	cout << -10%360 << endl;
 
 	if (num == "all") {
 		for (int i = 0; i < 16; i++) {
@@ -62,9 +64,7 @@ int main( int argc, const char** argv ) {
 		if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
 		// 3. Detect Faces and Display Result
-		detectAndDisplay( frame, num );
-
-		houghMain(file);
+		detectAndDisplay( frame, num, file );
 
 		// 4. Save Result Image
 		imwrite( "detected" + num + ".jpg", frame );
@@ -133,7 +133,7 @@ float findF1Score( float true_positives, float false_positives, float false_nega
 }
 
 /** @function detectAndDisplay */
-void detectAndDisplay( Mat frame, string num ) {
+void detectAndDisplay( Mat frame, string num, string file ) {
 	std::vector<Rect> faces;
 	Mat frame_gray;
 
@@ -196,4 +196,9 @@ void detectAndDisplay( Mat frame, string num ) {
 	float f1_score = findF1Score(true_positives, false_positives, false_negatives);
 
 	cout << "f1: " << f1_score << endl;
+
+	houghMain(file);
+
+	Mat houghCircles = imread("houghOutput.jpg", 1);
+	Mat houghLines = imread("houghLines.jpg", 1);
 }
