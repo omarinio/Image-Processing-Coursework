@@ -38,8 +38,6 @@ CascadeClassifier cascade;
 int main( int argc, const char** argv ) {
     string num = argv[1];
 
-	cout << -10%360 << endl;
-
 	if (num == "all") {
 		for (int i = 0; i < 16; i++) {
 			string file = "images/dart" + to_string(i) + ".jpg";
@@ -50,7 +48,7 @@ int main( int argc, const char** argv ) {
 			if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
 			// 3. Detect Faces and Display Result
-			detectAndDisplay( frame, to_string(i) );
+			detectAndDisplay( frame, to_string(i), file );
 
 			// 4. Save Result Image
 			imwrite( "detected" + to_string(i) + ".jpg", frame );
@@ -148,9 +146,9 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 	std::cout << faces.size() << std::endl;
 
        // 4. Draw box around faces found
-	for( int i = 0; i < faces.size(); i++ ) {
-		rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
-	}
+	// for( int i = 0; i < faces.size(); i++ ) {
+	// 	rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
+	// }
 
     vector<Rect> truths = readFile(num);
 
@@ -201,4 +199,50 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 
 	Mat houghCircles = imread("houghOutput.jpg", 1);
 	Mat houghLines = imread("houghLines.jpg", 1);
+
+	Mat linesGray;
+    cvtColor( houghLines, linesGray, CV_BGR2GRAY );
+    // hough lines threshold
+    Mat threshLines = threshold(linesGray, 160);
+	imwrite("FALO2.jpg", threshLines);
+
+	Mat circlesGray;
+	cvtColor( houghCircles, circlesGray, CV_BGR2GRAY );
+	// hough circles threshold
+	Mat threshCircles = threshold(circlesGray, 140);
+	imwrite("FALO3.jpg", threshCircles);
+
+	/* TODO: 
+	 *	   FIND AVERAGE OF FOUND LINES AND CIRCLES
+	 * 	   FIND IOU OF ALL OTHER RECTANGLES
+	 * 	   IF OVERLAP, FIND AVERAGE WIDTH AND HEIGHT AND CENTRE OF RECTANGLES AND DRAW A NEW ONE BASED ON THOSE
+	 * 
+	 * 
+	 */ 
+
+	// for( int i = 0; i < faces.size(); i++ ) {
+	// 	int counter = 0;
+	// 	for (int x = faces[i].x; x <= faces[i].x + faces[i].width; x++) {
+	// 		for (int y = faces[i].y; y <= faces[i].y + faces[i].height; y++) {
+	// 			if (threshCircles.at<uchar>(y, x) == 255) {
+	// 				counter++;
+	// 			}
+	// 		}
+	// 	}
+	// 	std::cout << counter << std::endl;
+	// 	if (counter >= 20) rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
+	// }
+
+	for( int i = 0; i < faces.size(); i++ ) {
+		int counter = 0;
+		for (int x = faces[i].x; x <= faces[i].x + faces[i].width; x++) {
+			for (int y = faces[i].y; y <= faces[i].y + faces[i].height; y++) {
+				if (threshLines.at<uchar>(y, x) == 255) {
+					counter++;
+				}
+			}
+		}
+		std::cout << counter << std::endl;
+		if (counter >= 20) rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
+	}
 }

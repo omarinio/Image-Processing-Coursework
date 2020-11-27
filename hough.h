@@ -99,7 +99,7 @@ void houghMain( std::string imageName ) {
     imwrite("mag.jpg",resultMag);
     imwrite("dir.jpg", resultDir);
 
-    const int MAXRADIUS = max(image.rows/4, image.cols/4);
+    const int MAXRADIUS = min(image.rows/4, image.cols/4);
 
     int ***houghSpace = malloc3dArray(image.rows, image.cols, MAXRADIUS);
 
@@ -382,7 +382,7 @@ void houghCircle(Mat &input, Mat &gradient, Mat &direction, int ***houghSpace, i
     Mat houghSpaceConvert(gradient.rows, gradient.cols, CV_8UC1);
     normalize(houghSpaceOutput, houghSpaceConvert, 0, 255, NORM_MINMAX);
 
-    imwrite( "houghOuput.jpg", houghSpaceConvert );
+    imwrite( "houghOutput.jpg", houghSpaceConvert );
     imwrite("output3.jpg", input);
 }
 
