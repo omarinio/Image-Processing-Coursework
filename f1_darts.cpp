@@ -203,7 +203,7 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 	Mat linesGray;
     cvtColor( houghLines, linesGray, CV_BGR2GRAY );
     // hough lines threshold
-    Mat threshLines = threshold(linesGray, 160);
+    Mat threshLines = threshold(linesGray, 140);
 	imwrite("FALO2.jpg", threshLines);
 
 	Mat circlesGray;
@@ -212,12 +212,10 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 	Mat threshCircles = threshold(circlesGray, 140);
 	imwrite("FALO3.jpg", threshCircles);
 
-	/* TODO: 
+	/* 
 	 *	   FIND AVERAGE OF FOUND LINES AND CIRCLES
 	 * 	   FIND IOU OF ALL OTHER RECTANGLES
 	 * 	   IF OVERLAP, FIND AVERAGE WIDTH AND HEIGHT AND CENTRE OF RECTANGLES AND DRAW A NEW ONE BASED ON THOSE
-	 * 
-	 * 
 	 */ 
 
 	// for( int i = 0; i < faces.size(); i++ ) {
@@ -233,16 +231,58 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 	// 	if (counter >= 20) rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
 	// }
 
+	// Rect is defined at (x,y,width,height)
+	std::vector<Rect> found;
+
 	for( int i = 0; i < faces.size(); i++ ) {
 		int counter = 0;
 		for (int x = faces[i].x; x <= faces[i].x + faces[i].width; x++) {
 			for (int y = faces[i].y; y <= faces[i].y + faces[i].height; y++) {
+				// counts up how many centre pixels are found
 				if (threshLines.at<uchar>(y, x) == 255) {
 					counter++;
 				}
 			}
 		}
 		std::cout << counter << std::endl;
-		if (counter >= 20) rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
+		// if above threshold, add to list of rectangles
+		if (counter >= 20) {
+			// check if new rectangle overlaps with any others
+			bool isFound = false;
+			Rect temp;
+			for (int j = 0; j < found.size(); j++) {
+				float iou = findIOU(faces[i], found[j]);
+				cout << found.size() << endl;
+				cout << iou << endl;
+				// if overlap is found, break out of for loop and remove the rectangle from the vector
+				if (iou > 0) {
+					isFound = true;
+					temp = found[j];
+					found.erase(found.begin() + j);
+					break;
+				}
+			}
+			// if intersecting rectangles found, find new rectangle which is the average of the 2 found
+			if (isFound == true) {
+				int avgX = (temp.x + faces[i].x) / 2;
+				int avgY = (temp.y + faces[i].y) / 2;
+				int avgWidth = (temp.width + faces[i].width) / 2;
+				int avgHeight = (temp.height + faces[i].height) / 2;
+
+				// create new rectangle and push back to vector
+				Rect avg(avgX, avgY, avgWidth, avgHeight);
+				found.push_back(avg);
+			} else {
+				// if no overlap found, simply push back new rectangle into found vector
+				found.push_back(faces[i]);
+			}
+		}
+	}
+
+	//cout << found.size() << endl;
+
+	// displays found triangles
+	for (int i = 0; i < found.size(); i++) {
+		rectangle(frame, Point(found[i].x, found[i].y), Point(found[i].x + found[i].width, found[i].y + found[i].height), Scalar( 0, 255, 0 ), 2);
 	}
 }
