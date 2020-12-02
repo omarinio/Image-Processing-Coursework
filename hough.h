@@ -331,7 +331,7 @@ void houghNaiveLines(Mat &input, Mat &gradient, Mat &direction) {
     Mat houghSpaceConvert(rho, 180, CV_8UC1);
     normalize(houghSpaceOutput, houghSpaceConvert, 0, 255, NORM_MINMAX);
 
-    imwrite( "houghLineOuput.jpg", houghSpaceConvert );
+    imwrite( "houghNaiveOuput.jpg", houghSpaceConvert );
 }
 
 void houghCircle(Mat &input, Mat &gradient, Mat &direction, int ***houghSpace, int radius, const int MAXRADIUS) {
