@@ -155,7 +155,7 @@ void detectAndDisplay( Mat frame, string num ) {
         rectangle(frame, Point(truths[j].x, truths[j].y), Point(truths[j].x + truths[j].width, truths[j].y + truths[j].height), Scalar(0,0,255), 2);
     }
 
-	float iou_threshold = 0.5;
+	float iou_threshold = 0.4;
 	float true_positives = 0;
 
 	for (int x = 0; x < truths.size(); x++) {

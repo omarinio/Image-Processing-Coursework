@@ -157,43 +157,8 @@ void detectAndDisplay( Mat frame, string num, string file ) {
         rectangle(frame, Point(truths[j].x, truths[j].y), Point(truths[j].x + truths[j].width, truths[j].y + truths[j].height), Scalar(0,0,255), 2);
     }
 
-	float iou_threshold = 0.5;
+	float iou_threshold = 0.4;
 	float true_positives = 0;
-
-	for (int x = 0; x < truths.size(); x++) {
-		for (int y = 0; y < faces.size(); y++) {
-			float iou = findIOU(faces[y], truths[x]);
-			if (iou > iou_threshold) {
-				true_positives++;
-				break;
-			}
-		}
-	}
-
-	float true_positive_rate;
-
-	cout << "IMAGE " << num << endl;
-
-	if (truths.size() > 0){
-		true_positive_rate = true_positives/(float)truths.size();
-	} else {
-		true_positive_rate = 0;
-	}
-
-	cout << "TPR: " << true_positive_rate << endl;
-	cout << "true positives: " << true_positives << endl;
-
-	float false_positives = faces.size() - true_positives;
-
-	cout << "false positives: " << false_positives << endl;
-
-	float false_negatives = truths.size() - true_positives;
-
-	cout << "false negatives: " << false_negatives << endl;
-
-	float f1_score = findF1Score(true_positives, false_positives, false_negatives);
-
-	cout << "f1: " << f1_score << endl;
 
 	houghMain(file);
 
@@ -282,8 +247,44 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 
 	//cout << found.size() << endl;
 
+	float true_positive_rate;
+
+		for (int x = 0; x < truths.size(); x++) {
+			for (int y = 0; y < found.size(); y++) {
+				float iou = findIOU(found[y], truths[x]);
+				if (iou > iou_threshold) {
+					true_positives++;
+					break;
+				}
+			}
+		}
+
+	cout << "IMAGE " << num << endl;
+
+	if (truths.size() > 0){
+		true_positive_rate = true_positives/(float)truths.size();
+	} else {
+		true_positive_rate = 0;
+	}
+
+	cout << "TPR: " << true_positive_rate << endl;
+	cout << "true positives: " << true_positives << endl;
+
+	float false_positives = found.size() - true_positives;
+
+	cout << "false positives: " << false_positives << endl;
+
+	float false_negatives = truths.size() - true_positives;
+
+	cout << "false negatives: " << false_negatives << endl;
+
+	float f1_score = findF1Score(true_positives, false_positives, false_negatives);
+
+	cout << "f1: " << f1_score << endl;
+
 	// displays found triangles
 	for (int i = 0; i < found.size(); i++) {
+
 		rectangle(frame, Point(found[i].x, found[i].y), Point(found[i].x + found[i].width, found[i].y + found[i].height), Scalar( 0, 255, 0 ), 2);
 	}
 }
