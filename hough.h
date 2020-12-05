@@ -110,6 +110,8 @@ void houghMain( std::string imageName ) {
     // thresholding magnitude
     Mat thresh = threshold(mag_gray, 60);
 
+    imwrite("mag_thresh.jpg", thresh);
+
     // finding circles 
     houghCircle(image, thresh, dirSobel, houghSpace, MAXRADIUS-MINRADIUS, MAXRADIUS);
 
