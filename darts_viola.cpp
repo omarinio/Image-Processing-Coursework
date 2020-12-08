@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// COMS30121 - f1_darts.cpp
+// COMS30121 - f1_faces.cpp
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -17,13 +17,11 @@
 #include <sstream>
 #include <fstream>
 
-#include "hough.h"
-
 using namespace std;
 using namespace cv;
 
 /** Function Headers */
-void detectAndDisplay( Mat frame, string num, string file );
+void detectAndDisplay( Mat frame, string num );
 vector<string> split( const std::string &line, char delimiter );
 float findIOU( Rect found, Rect truth );
 float findF1Score( float true_positives, float false_positives, float false_negatives );
@@ -48,7 +46,7 @@ int main( int argc, const char** argv ) {
 			if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
 			// 3. Detect Faces and Display Result
-			detectAndDisplay( frame, to_string(i), file );
+			detectAndDisplay( frame, to_string(i) );
 
 			// 4. Save Result Image
 			imwrite( "detected" + to_string(i) + ".jpg", frame );
@@ -58,12 +56,11 @@ int main( int argc, const char** argv ) {
        
 		Mat frame = imread(file, CV_LOAD_IMAGE_COLOR);
 
-
 		// 2. Load the Strong Classifier in a structure called `Cascade'
 		if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
 		// 3. Detect Faces and Display Result
-		detectAndDisplay( frame, num, file );
+		detectAndDisplay( frame, num );
 
 		// 4. Save Result Image
 		imwrite( "detected" + num + ".jpg", frame );
@@ -132,7 +129,7 @@ float findF1Score( float true_positives, float false_positives, float false_nega
 }
 
 /** @function detectAndDisplay */
-void detectAndDisplay( Mat frame, string num, string file ) {
+void detectAndDisplay( Mat frame, string num ) {
 	std::vector<Rect> faces;
 	Mat frame_gray;
 
@@ -146,6 +143,11 @@ void detectAndDisplay( Mat frame, string num, string file ) {
        // 3. Print number of Faces found
 	std::cout << faces.size() << std::endl;
 
+       // 4. Draw box around faces found
+	for( int i = 0; i < faces.size(); i++ ) {
+		rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
+	}
+
     vector<Rect> truths = readFile(num);
 
     // 5. Draw ground truth
@@ -156,89 +158,17 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 	float iou_threshold = 0.4;
 	float true_positives = 0;
 
-	houghMain(file);
-
-	Mat houghCircles = imread("houghOutput.jpg", 1);
-	Mat houghLines = imread("houghLines.jpg", 1);
-
-	Mat linesGray;
-    cvtColor( houghLines, linesGray, CV_BGR2GRAY );
-    // hough lines threshold
-    Mat threshLines = threshold(linesGray, 140);
-
-	Mat circlesGray;
-	cvtColor( houghCircles, circlesGray, CV_BGR2GRAY );
-	// hough circles threshold
-	Mat threshCircles = threshold(circlesGray, 140);
-
-	/* 
-	 *	   FIND AVERAGE OF FOUND LINES AND CIRCLES
-	 * 	   FIND IOU OF ALL OTHER RECTANGLES
-	 * 	   IF OVERLAP, FIND AVERAGE WIDTH AND HEIGHT AND CENTRE OF RECTANGLES AND DRAW A NEW ONE BASED ON THOSE
-	 */ 
-
-	// Rect is defined as (x,y,width,height)
-	std::vector<Rect> found;
-
-	for( int i = 0; i < faces.size(); i++ ) {
-		int counter = 0;
-		for (int x = faces[i].x; x <= faces[i].x + faces[i].width; x++) {
-			for (int y = faces[i].y; y <= faces[i].y + faces[i].height; y++) {
-				// counts up how many centre pixels are found
-				if (threshLines.at<uchar>(y, x) == 255) {
-					counter++;
-				}
-				if (threshCircles.at<uchar>(y, x) == 255) {
-					counter++;
-				}
+	for (int x = 0; x < truths.size(); x++) {
+		for (int y = 0; y < faces.size(); y++) {
+			float iou = findIOU(faces[y], truths[x]);
+			if (iou > iou_threshold) {
+				true_positives++;
+				break;
 			}
-		}
-
-		// if above threshold, add to list of rectangles
-		if (counter >= 80) {
-			// check if new rectangle overlaps with any others
-			bool isFound = false;
-			Rect temp;
-			for (int j = 0; j < found.size(); j++) {
-				float iou = findIOU(faces[i], found[j]);
-				// if overlap is found, break out of for loop and remove the rectangle from the vector
-				if (iou > 0) {
-					isFound = true;
-					temp = found[j];
-					found.erase(found.begin() + j);
-					break;
-				}
-			}
-			// if intersecting rectangles found, find new rectangle which is the average of the 2 found
-			if (isFound == true) {
-				int avgX = (temp.x + faces[i].x) / 2;
-				int avgY = (temp.y + faces[i].y) / 2;
-				int avgWidth = (temp.width + faces[i].width) / 2;
-				int avgHeight = (temp.height + faces[i].height) / 2;
-
-				// create new rectangle and push back to vector
-				Rect avg(avgX, avgY, avgWidth, avgHeight);
-				found.push_back(avg);
-			} else {
-				// if no overlap found, simply push back new rectangle into found vector
-				found.push_back(faces[i]);
-			}
-
 		}
 	}
 
 	float true_positive_rate;
-
-		for (int x = 0; x < truths.size(); x++) {
-			for (int y = 0; y < found.size(); y++) {
-				float iou = findIOU(found[y], truths[x]);
-				std::cout << iou << std::endl;
-				if (iou > iou_threshold) {
-					true_positives++;
-					break;
-				}
-			}
-		}
 
 	cout << "IMAGE " << num << endl;
 
@@ -251,7 +181,7 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 	cout << "TPR: " << true_positive_rate << endl;
 	cout << "true positives: " << true_positives << endl;
 
-	float false_positives = found.size() - true_positives;
+	float false_positives = faces.size() - true_positives;
 
 	cout << "false positives: " << false_positives << endl;
 
@@ -262,10 +192,4 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 	float f1_score = findF1Score(true_positives, false_positives, false_negatives);
 
 	cout << "f1: " << f1_score << endl;
-
-	// displays found triangles
-	for (int i = 0; i < found.size(); i++) {
-
-		rectangle(frame, Point(found[i].x, found[i].y), Point(found[i].x + found[i].width, found[i].y + found[i].height), Scalar( 0, 255, 0 ), 2);
-	}
 }

@@ -58,7 +58,6 @@ int main( int argc, const char** argv ) {
        
 		Mat frame = imread(file, CV_LOAD_IMAGE_COLOR);
 
-
 		// 2. Load the Strong Classifier in a structure called `Cascade'
 		if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
@@ -177,6 +176,8 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 	 * 	   IF OVERLAP, FIND AVERAGE WIDTH AND HEIGHT AND CENTRE OF RECTANGLES AND DRAW A NEW ONE BASED ON THOSE
 	 */ 
 
+	Mat dartboard = imread("dart.bmp", CV_LOAD_IMAGE_COLOR);
+
 	// Rect is defined as (x,y,width,height)
 	std::vector<Rect> found;
 
@@ -193,7 +194,6 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 				}
 			}
 		}
-
 		// if above threshold, add to list of rectangles
 		if (counter >= 80) {
 			// check if new rectangle overlaps with any others
@@ -209,23 +209,63 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 					break;
 				}
 			}
-			// if intersecting rectangles found, find new rectangle which is the average of the 2 found
+			// if intersecting rectangles found, compare histograms
 			if (isFound == true) {
-				int avgX = (temp.x + faces[i].x) / 2;
-				int avgY = (temp.y + faces[i].y) / 2;
-				int avgWidth = (temp.width + faces[i].width) / 2;
-				int avgHeight = (temp.height + faces[i].height) / 2;
+				vector<Rect> truths = readFile(num);
 
-				// create new rectangle and push back to vector
-				Rect avg(avgX, avgY, avgWidth, avgHeight);
-				found.push_back(avg);
+				Mat cropped = frame(faces[i]);
+				Mat cropped2 = frame(temp);
+
+				vector<Mat> bgr_planes;
+				vector<Mat> bgr_planes2;
+				vector<Mat> bgr_planes3;
+				cv::split( cropped, bgr_planes );
+				cv::split( cropped2, bgr_planes2 );
+				cv::split( dartboard, bgr_planes3 );
+
+				Mat b_hist1;
+				Mat g_hist1;
+				Mat r_hist1;
+				Mat b_hist2;
+				Mat g_hist2;
+				Mat r_hist2;
+				Mat b_hist3;
+				Mat g_hist3;
+				Mat r_hist3;
+				int histSize = 256;
+				float range[] = { 0, 256 }; 
+				const float* histRange = { range };
+
+				cv::calcHist(&bgr_planes[0], 1, 0, cv::Mat(), b_hist1, 1, &histSize, &histRange, true, false );
+				cv::calcHist(&bgr_planes[1], 1, 0, cv::Mat(), g_hist1, 1, &histSize, &histRange, true, false );
+				cv::calcHist(&bgr_planes[2], 1, 0, cv::Mat(), r_hist1, 1, &histSize, &histRange, true, false );
+
+				cv::calcHist(&bgr_planes2[0], 1, 0, cv::Mat(), b_hist2, 1, &histSize, &histRange, true, false );
+				cv::calcHist(&bgr_planes2[1], 1, 0, cv::Mat(), g_hist2, 1, &histSize, &histRange, true, false );
+				cv::calcHist(&bgr_planes2[2], 1, 0, cv::Mat(), r_hist2, 1, &histSize, &histRange, true, false );
+
+				cv::calcHist(&bgr_planes3[0], 1, 0, cv::Mat(), b_hist3, 1, &histSize, &histRange, true, false );
+				cv::calcHist(&bgr_planes3[1], 1, 0, cv::Mat(), g_hist3, 1, &histSize, &histRange, true, false );
+				cv::calcHist(&bgr_planes3[2], 1, 0, cv::Mat(), r_hist3, 1, &histSize, &histRange, true, false );
+
+				double totalHist = cv::compareHist(b_hist1, b_hist3, CV_COMP_CORREL) + cv::compareHist(g_hist1, g_hist3, CV_COMP_CORREL) + cv::compareHist(r_hist1, r_hist3, CV_COMP_CORREL);
+				double totalHist2 = cv::compareHist(b_hist2, b_hist3, CV_COMP_CORREL) + cv::compareHist(g_hist2, g_hist3, CV_COMP_CORREL) + cv::compareHist(r_hist2, r_hist3, CV_COMP_CORREL);
+
+				std::cout << totalHist << std::endl;
+				std::cout << totalHist2 << std::endl;
+				if (totalHist > totalHist2) {
+					found.push_back(faces[i]);
+				} else {
+					found.push_back(temp);
+				}
 			} else {
 				// if no overlap found, simply push back new rectangle into found vector
 				found.push_back(faces[i]);
 			}
-
 		}
 	}
+
+	//cout << found.size() << endl;
 
 	float true_positive_rate;
 

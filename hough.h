@@ -233,12 +233,15 @@ void houghLines(Mat &input, Mat &gradient, Mat &direction) {
                 int thetaDeg = (theta*180)/M_PI + 180;
                 for (int deg = thetaDeg - 5; deg < thetaDeg + 6; deg++) {
                     // make sure degrees don't go above 360 or negative
-                    int modDeg = (deg+360)%360;
+                    int newDeg;
+                    if (deg < 0) newDeg = deg + 360;
+                    else if (deg >= 360) newDeg = deg % 360;
+                    else newDeg = deg;
                     // convert back to radians for sin, cos calculation
-                    float rad = (modDeg-180)*M_PI/180;
+                    float rad = (newDeg-180)*M_PI/180;
                     int p = (y * cos(rad)) + (x * sin(rad));
                     if (p >= 0 && p < rho) {
-                        houghSpace[p][modDeg]++;
+                        houghSpace[p][newDeg]++;
                     }
                 }
             }
@@ -319,14 +322,6 @@ void houghNaiveLines(Mat &input, Mat &gradient, Mat &direction) {
     for (int x = 0; x < rho; x++) {
         for (int y = 0; y < 180; y++) {
                 houghSpaceOutput.at<float>(x,y) += houghSpace[x][y];
-                // if (houghSpace[x][y][r] > 20) {
-                //     std::cout << "circle" << std::endl;
-                //     circle(input, Point(y, x), r, Scalar(0, 255, 255), 2);
-                // }
-                // if(!(pow((x-xc),2) + pow((y-yc),2) > pow(rc,2))) {
-                //     test_pass = false;
-                // }
-            
         }
     }
 
@@ -388,8 +383,7 @@ void houghCircle(Mat &input, Mat &gradient, Mat &direction, int ***houghSpace, i
     imwrite("output3.jpg", input);
 }
 
-void GaussianBlur(cv::Mat &input, int size, cv::Mat &blurredOutput)
-{
+void GaussianBlur(cv::Mat &input, int size, cv::Mat &blurredOutput) {
 	// intialise the output using the input
 	blurredOutput.create(input.size(), input.type());
 

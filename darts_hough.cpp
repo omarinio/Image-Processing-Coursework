@@ -146,11 +146,6 @@ void detectAndDisplay( Mat frame, string num, string file ) {
        // 3. Print number of Faces found
 	std::cout << faces.size() << std::endl;
 
-       //4. Draw box around faces found
-	// for( int i = 0; i < faces.size(); i++ ) {
-	// 	rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
-	// }
-
     vector<Rect> truths = readFile(num);
 
     // 5. Draw ground truth
@@ -170,13 +165,11 @@ void detectAndDisplay( Mat frame, string num, string file ) {
     cvtColor( houghLines, linesGray, CV_BGR2GRAY );
     // hough lines threshold
     Mat threshLines = threshold(linesGray, 140);
-	imwrite("FALO2.jpg", threshLines);
 
 	Mat circlesGray;
 	cvtColor( houghCircles, circlesGray, CV_BGR2GRAY );
 	// hough circles threshold
 	Mat threshCircles = threshold(circlesGray, 140);
-	imwrite("FALO3.jpg", threshCircles);
 
 	/* 
 	 *	   FIND AVERAGE OF FOUND LINES AND CIRCLES
@@ -184,57 +177,8 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 	 * 	   IF OVERLAP, FIND AVERAGE WIDTH AND HEIGHT AND CENTRE OF RECTANGLES AND DRAW A NEW ONE BASED ON THOSE
 	 */ 
 
-	Mat dartboard = imread("dart.bmp", CV_LOAD_IMAGE_COLOR);
-
-	// Rect is defined at (x,y,width,height)
+	// Rect is defined as (x,y,width,height)
 	std::vector<Rect> found;
-
-	// for( int i = 0; i < faces.size(); i++ ) {
-	// 	int counter = 0;
-	// 	for (int x = faces[i].x; x <= faces[i].x + faces[i].width; x++) {
-	// 		for (int y = faces[i].y; y <= faces[i].y + faces[i].height; y++) {
-	// 			// counts up how many centre pixels are found
-	// 			if (threshLines.at<uchar>(y, x) == 255) {
-	// 				counter++;
-	// 			}
-	// 			if (threshCircles.at<uchar>(y, x) == 255) {
-	// 				counter++;
-	// 			}
-	// 		}
-	// 	}
-
-	// 	// if above threshold, add to list of rectangles
-	// 	if (counter >= 80) {
-	// 		// check if new rectangle overlaps with any others
-	// 		bool isFound = false;
-	// 		Rect temp;
-	// 		for (int j = 0; j < found.size(); j++) {
-	// 			float iou = findIOU(faces[i], found[j]);
-	// 			// if overlap is found, break out of for loop and remove the rectangle from the vector
-	// 			if (iou > 0) {
-	// 				isFound = true;
-	// 				temp = found[j];
-	// 				found.erase(found.begin() + j);
-	// 				break;
-	// 			}
-	// 		}
-	// 		// if intersecting rectangles found, find new rectangle which is the average of the 2 found
-	// 		if (isFound == true) {
-	// 			int avgX = (temp.x + faces[i].x) / 2;
-	// 			int avgY = (temp.y + faces[i].y) / 2;
-	// 			int avgWidth = (temp.width + faces[i].width) / 2;
-	// 			int avgHeight = (temp.height + faces[i].height) / 2;
-
-	// 			// create new rectangle and push back to vector
-	// 			Rect avg(avgX, avgY, avgWidth, avgHeight);
-	// 			found.push_back(avg);
-	// 		} else {
-	// 			// if no overlap found, simply push back new rectangle into found vector
-	// 			found.push_back(faces[i]);
-	// 		}
-
-	// 	}
-	// }
 
 	for( int i = 0; i < faces.size(); i++ ) {
 		int counter = 0;
@@ -249,80 +193,12 @@ void detectAndDisplay( Mat frame, string num, string file ) {
 				}
 			}
 		}
+
 		// if above threshold, add to list of rectangles
 		if (counter >= 80) {
-			// check if new rectangle overlaps with any others
-			bool isFound = false;
-			Rect temp;
-			for (int j = 0; j < found.size(); j++) {
-				float iou = findIOU(faces[i], found[j]);
-				// if overlap is found, break out of for loop and remove the rectangle from the vector
-				if (iou > 0) {
-					isFound = true;
-					temp = found[j];
-					found.erase(found.begin() + j);
-					break;
-				}
-			}
-			// if intersecting rectangles found, find new rectangle which is the average of the 2 found
-			if (isFound == true) {
-				vector<Rect> truths = readFile(num);
-
-				Mat cropped = frame(faces[i]);
-				Mat cropped2 = frame(temp);
-
-				imwrite("fkinfalo.jpg", cropped);
-
-				vector<Mat> bgr_planes;
-				vector<Mat> bgr_planes2;
-				vector<Mat> bgr_planes3;
-				split( cropped, bgr_planes );
-				split( cropped2, bgr_planes2 );
-				split( dartboard, bgr_planes3 );
-
-				Mat b_hist1;
-				Mat g_hist1;
-				Mat r_hist1;
-				Mat b_hist2;
-				Mat g_hist2;
-				Mat r_hist2;
-				Mat b_hist3;
-				Mat g_hist3;
-				Mat r_hist3;
-				int histSize = 256;
-				float range[] = { 0, 256 }; //the upper boundary is exclusive
-				const float* histRange = { range };
-
-				cv::calcHist(&bgr_planes[0], 1, 0, cv::Mat(), b_hist1, 1, &histSize, &histRange, true, false );
-				cv::calcHist(&bgr_planes[1], 1, 0, cv::Mat(), g_hist1, 1, &histSize, &histRange, true, false );
-				cv::calcHist(&bgr_planes[2], 1, 0, cv::Mat(), r_hist1, 1, &histSize, &histRange, true, false );
-
-				cv::calcHist(&bgr_planes2[0], 1, 0, cv::Mat(), b_hist2, 1, &histSize, &histRange, true, false );
-				cv::calcHist(&bgr_planes2[1], 1, 0, cv::Mat(), g_hist2, 1, &histSize, &histRange, true, false );
-				cv::calcHist(&bgr_planes2[2], 1, 0, cv::Mat(), r_hist2, 1, &histSize, &histRange, true, false );
-
-				cv::calcHist(&bgr_planes3[0], 1, 0, cv::Mat(), b_hist3, 1, &histSize, &histRange, true, false );
-				cv::calcHist(&bgr_planes3[1], 1, 0, cv::Mat(), g_hist3, 1, &histSize, &histRange, true, false );
-				cv::calcHist(&bgr_planes3[2], 1, 0, cv::Mat(), r_hist3, 1, &histSize, &histRange, true, false );
-
-				double totalHist = compareHist(b_hist1, b_hist3, CV_COMP_CORREL) + compareHist(g_hist1, g_hist3, CV_COMP_CORREL) + compareHist(r_hist1, r_hist3, CV_COMP_CORREL);
-				double totalHist2 = compareHist(b_hist2, b_hist3, CV_COMP_CORREL) + compareHist(g_hist2, g_hist3, CV_COMP_CORREL) + compareHist(r_hist2, r_hist3, CV_COMP_CORREL);
-
-				std::cout << totalHist << std::endl;
-				std::cout << totalHist2 << std::endl;
-				if (totalHist > totalHist2) {
-					found.push_back(faces[i]);
-				} else {
-					found.push_back(temp);
-				}
-			} else {
-				// if no overlap found, simply push back new rectangle into found vector
 				found.push_back(faces[i]);
-			}
 		}
 	}
-
-	//cout << found.size() << endl;
 
 	float true_positive_rate;
 
